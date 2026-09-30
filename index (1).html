@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0c0c;--surface:#141414;--surface2:#1c1c1c;
+  --border:#252525;--border2:#2e2e2e;
+  --text:#ede9e1;--muted:#787570;--faint:#3a3a3a;
+  --glute:#e07d45;--glute-dim:#2e1a0a;--glute-mid:#7a3a12;
+  --run:#46b090;--run-dim:#0a2820;--run-mid:#1d6b52;
+  --upper:#8075cc;--upper-dim:#1a1630;--upper-mid:#4a4190;
+  --lower:#c89e3a;--lower-dim:#281e06;--lower-mid:#705810;
+  --success:#4a9458;--success-dim:#0d2210;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+nav{display:flex;align-items:stretch;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(12,12,12,0.96);backdrop-filter:blur(12px);z-index:200;padding:0 2rem;}
+.nav-logo{font-family:'DM Mono',monospace;font-size:11px;color:var(--glute);letter-spacing:.12em;padding:0 1.5rem 0 0;margin-right:1.5rem;border-right:1px solid var(--border);display:flex;align-items:center;white-space:nowrap;}
+.nav-tabs{display:flex;overflow-x:auto;}
+.nav-tab{font-size:12px;font-weight:500;letter-spacing:.04em;padding:1.1rem 1.1rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s,border-color .15s;user-select:none;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--text);border-bottom-color:var(--glute);}
+
+/* PAGES */
+.page{display:none;padding:2rem;max-width:1120px;margin:0 auto;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:1.75rem;}
+.sec{margin-bottom:2rem;}
+.sec-label{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem;padding-bottom:6px;border-bottom:1px solid var(--border);}
+
+/* WEEK GRID */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1.5rem;}
+.day-col{background:var(--surface);display:flex;flex-direction:column;min-width:0;}
+.day-head{padding:11px 12px 10px;border-bottom:1px solid var(--border);border-left:3px solid transparent;}
+.day-col.t-glute .day-head{border-left-color:var(--glute);}
+.day-col.t-upper .day-head{border-left-color:var(--upper);}
+.day-col.t-lower .day-head{border-left-color:var(--lower);}
+.day-col.t-run   .day-head{border-left-color:var(--run);}
+.day-col.t-rest  .day-head{border-left-color:var(--faint);}
+.dnum{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--muted);margin-bottom:2px;}
+.dname{font-size:12px;font-weight:600;color:var(--text);line-height:1.25;}
+.dsub{font-size:10px;color:var(--muted);margin-top:2px;}
+.day-body{padding:10px 12px;flex:1;display:flex;flex-direction:column;gap:3px;}
+.dtag{display:inline-block;font-size:9px;font-weight:500;padding:2px 6px;border-radius:3px;margin-bottom:7px;letter-spacing:.04em;}
+.dtag-glute{background:var(--glute-dim);color:var(--glute);}
+.dtag-upper{background:var(--upper-dim);color:var(--upper);}
+.dtag-lower{background:var(--lower-dim);color:var(--lower);}
+.dtag-run{background:var(--run-dim);color:var(--run);}
+.dtag-rest{background:var(--faint);color:var(--muted);}
+.ex{display:flex;flex-direction:column;padding:3px 0;}
+.ex-name{font-size:11px;color:var(--text);line-height:1.3;}
+.ex-sets{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);}
+.ex-note{font-size:9px;color:var(--faint);font-style:italic;margin-top:1px;}
+.ex.g .ex-name{color:var(--glute);}
+.ex.opt .ex-name{color:var(--muted);}
+.ex-div{height:1px;background:var(--border);margin:6px 0;}
+.run-note{font-size:10px;color:var(--run);background:var(--run-dim);padding:4px 7px;border-radius:3px;margin-bottom:6px;}
+.finisher{font-size:10px;color:var(--lower);background:var(--lower-dim);padding:5px 7px;border-radius:3px;margin-top:8px;}
+.finisher.optional{color:var(--muted);background:var(--faint);}
+.core-note{font-size:10px;color:var(--upper);background:var(--upper-dim);padding:4px 7px;border-radius:3px;margin-top:4px;}
+.goal-note{font-size:10px;color:var(--glute);background:var(--glute-dim);padding:4px 7px;border-radius:3px;margin-bottom:6px;}
+.week-badge{display:inline-block;font-size:9px;font-weight:500;padding:1px 5px;border-radius:3px;margin-left:4px;}
+.wb-a{background:var(--run-dim);color:var(--run);}
+.wb-b{background:var(--glute-dim);color:var(--glute);}
+
+/* LEGEND */
+.legend{display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:7px 12px;border-bottom:1px solid var(--border);background:var(--surface);}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--border2);color:var(--muted);line-height:1.5;vertical-align:top;}
+.tbl td:first-child{color:var(--text);font-weight:500;}
+.tbl tr:last-child td{border-bottom:none;}
+
+/* PACE */
+.pace-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.pace-card{background:var(--surface);padding:1.25rem;}
+.plabel{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.pval{font-family:'DM Mono',monospace;font-size:22px;color:var(--text);margin-bottom:2px;}
+.psub{font-size:11px;color:var(--muted);}
+
+/* PILLS */
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:3px;}
+.pill-easy{background:var(--run-dim);color:var(--run);}
+.pill-tempo{background:var(--upper-dim);color:var(--upper);}
+.pill-hard{background:var(--glute-dim);color:var(--glute);}
+.pill-float{background:var(--faint);color:var(--muted);}
+
+/* PROG */
+.prog-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.prog-card{background:var(--surface);padding:1.25rem;}
+.pwk{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--glute);margin-bottom:6px;}
+.pwv{font-size:13px;font-weight:500;color:var(--text);margin-bottom:3px;}
+.pwsub{font-size:11px;color:var(--muted);}
+
+/* HIP THRUST PROG */
+.ht-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.ht-card{background:var(--surface);padding:1.5rem;}
+.ht-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--glute);text-transform:uppercase;margin-bottom:1rem;}
+.ht-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;}
+.ht-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--glute);min-width:18px;}
+.ht-text{font-size:12px;color:var(--muted);line-height:1.6;}
+.ht-text strong{color:var(--text);font-weight:500;}
+
+/* CORE */
+.core-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem;}
+.core-card{background:var(--surface);padding:1.5rem;}
+.core-sess{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;color:var(--upper);text-transform:uppercase;margin-bottom:1rem;}
+.core-ex{margin-bottom:10px;}
+.core-ex-name{font-size:13px;font-weight:500;color:var(--text);}
+.core-ex-sets{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+.core-ex-why{font-size:11px;color:var(--muted);margin-top:1px;}
+.core-focus-box{font-size:11px;color:var(--upper);background:var(--upper-dim);padding:7px 10px;border-radius:4px;margin-top:6px;}
+
+/* STRATEGY */
+.strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:2rem;}
+.strat-card{background:var(--surface);padding:1.5rem;}
+.strat-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--glute);text-transform:uppercase;margin-bottom:8px;}
+.strat-body{font-size:12px;color:var(--muted);line-height:1.75;}
+.strat-body strong{color:var(--text);font-weight:500;}
+
+/* INFO */
+.info{font-size:12px;padding:10px 14px;border-radius:6px;line-height:1.65;margin-bottom:1rem;}
+.info-amber{background:var(--lower-dim);color:var(--lower);border-left:2px solid var(--lower-mid);}
+.info-teal{background:var(--run-dim);color:var(--run);border-left:2px solid var(--run-mid);}
+.info-purple{background:var(--upper-dim);color:var(--upper);border-left:2px solid var(--upper-mid);}
+.info-green{background:var(--success-dim);color:#6abf7a;border-left:2px solid var(--success);}
+.info-glute{background:var(--glute-dim);color:var(--glute);border-left:2px solid var(--glute-mid);}
+
+/* WEIGHT LOG */
+.wt-intro{font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:2rem;max-width:640px;}
+.wt-day{margin-bottom:3rem;}
+.wt-day-hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:.75rem;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.wt-day-name{font-size:15px;font-weight:600;color:var(--text);}
+.wt-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.wt-tbl th{text-align:left;font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:7px 10px;border-bottom:1px solid var(--border);background:var(--surface);}
+.wt-tbl th.wk{text-align:center;min-width:80px;}
+.wt-tbl td{padding:0;border-bottom:1px solid var(--border);}
+.wt-tbl td.ec{padding:9px 10px;font-size:12px;font-weight:500;color:var(--text);min-width:170px;vertical-align:middle;}
+.wt-tbl td.ec.g{color:var(--glute);}
+.wt-tbl td.ec.opt{color:var(--muted);font-style:italic;}
+.wt-tbl td.sc{padding:9px 10px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap;vertical-align:middle;}
+.wt-tbl tr:last-child td{border-bottom:none;}
+.wt-tbl tbody tr:hover td{background:#171717;}
+.wi{width:100%;border:none;background:transparent;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;text-align:center;padding:9px 6px;outline:none;cursor:text;}
+.wi:focus{background:var(--surface2);}
+.wi::placeholder{color:var(--faint);font-size:11px;}
+.wt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;border:1px solid var(--border);}
+.wt-scroll .wt-tbl{border:none;min-width:580px;}
+.wt-scroll .wt-tbl th:first-child,.wt-scroll .wt-tbl td.ec{position:sticky;left:0;z-index:2;background:var(--surface);}
+.wt-scroll .wt-tbl tbody tr:hover td.ec{background:#171717;}
+
+/* MOBILE PLAN */
+.day-col-mobile{background:var(--surface);border-radius:10px;border:1px solid var(--border);overflow:hidden;display:none;}
+.day-col-mobile .day-head{border-left-width:4px;}
+.day-col-mobile.t-glute .day-head{border-left-color:var(--glute);}
+.day-col-mobile.t-upper .day-head{border-left-color:var(--upper);}
+.day-col-mobile.t-lower .day-head{border-left-color:var(--lower);}
+.day-col-mobile.t-run   .day-head{border-left-color:var(--run);}
+.day-col-mobile.t-rest  .day-head{border-left-color:var(--faint);}
+.day-switcher{display:none;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:8px;}
+.day-switcher button{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 16px;border-radius:6px;cursor:pointer;}
+.day-switcher button:active{background:var(--surface2);}
+.day-indicator{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:center;flex:1;letter-spacing:.06em;}
+.day-dots{display:none;justify-content:center;gap:6px;margin-bottom:1rem;}
+.day-dot{width:6px;height:6px;border-radius:50%;background:var(--faint);transition:background .2s;cursor:pointer;}
+.day-dot.active{background:var(--glute);}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  nav{padding:0 .75rem;}
+  .nav-logo{display:none;}
+  .nav-tab{padding:.9rem .8rem;font-size:13px;}
+  .page{padding:1rem;}
+  .page-title{font-size:11px;}
+  .week-grid{display:none;}
+  .day-switcher{display:flex;}
+  .day-dots{display:flex;}
+  .day-col-mobile{display:flex;flex-direction:column;}
+  .day-col-mobile.hidden{display:none;}
+  .dname{font-size:15px;}
+  .dsub{font-size:12px;}
+  .ex-name{font-size:14px;}
+  .ex-sets{font-size:12px;}
+  .ex-note{font-size:11px;}
+  .run-note{font-size:13px;}
+  .finisher{font-size:12px;}
+  .core-note{font-size:12px;}
+  .goal-note{font-size:12px;}
+  .wt-tbl{display:none;}
+  .wt-scroll{display:block;}
+  .wt-scroll .wt-tbl{display:table;}
+  .wt-tbl th{font-size:12px;padding:8px;}
+  .wt-tbl td.ec{font-size:14px;padding:10px 8px;min-width:150px;}
+  .wt-tbl td.sc{font-size:12px;}
+  .wi{font-size:14px;padding:10px 4px;}
+  .wt-day-hdr{flex-direction:column;gap:2px;}
+  .wt-day-name{font-size:17px;}
+  .wt-intro{font-size:14px;}
+  .strat-grid,.core-grid,.pace-row,.prog-row,.ht-grid{grid-template-columns:1fr;}
+  .info{font-size:13px;}
+  .tbl th{font-size:12px;}
+  .tbl td{font-size:13px;}
+  .sec-label{font-size:12px;}
+  .pval{font-size:26px;}
+  .plabel{font-size:12px;}
+  .psub{font-size:13px;}
+  .pill{font-size:12px;padding:3px 8px;}
+  .pwv{font-size:15px;}
+  .pwsub{font-size:13px;}
+  .ht-text{font-size:14px;}
+  .core-ex-name{font-size:15px;}
+  .core-ex-sets{font-size:13px;}
+  .core-ex-why{font-size:13px;}
+  .strat-title{font-size:12px;}
+  .strat-body{font-size:14px;}
+}
+@media(min-width:701px){
+  .wt-scroll{display:none;}
+  .wt-tbl{display:table;}
+  .week-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .day-switcher,.day-dots,.day-col-mobile{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">TRAINING // 2026</div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="show('plan',this)">Weekly plan</div>
+    <div class="nav-tab" onclick="show('weights',this)">Weight log</div>
+    <div class="nav-tab" onclick="show('running',this)">Running</div>
+    <div class="nav-tab" onclick="show('cardio',this)">Cardio</div>
+    <div class="nav-tab" onclick="show('core',this)">Core</div>
+    <div class="nav-tab" onclick="show('hipthrust',this)">Hip thrust prog</div>
+    <div class="nav-tab" onclick="show('strategy',this)">Progression</div>
+  </div>
+</nav>
+
+<!-- ═══ PLAN ═══ -->
+<div id="page-plan" class="page active">
+  <div class="page-title">Final weekly training + cardio plan</div>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:var(--glute)"></div>Glute focus</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--run)"></div>Run</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--upper)"></div>Upper</div>
+    <div class="leg-item"><div class="leg-dot" style="background:var(--lower)"></div>Lower</div>
+    <div class="leg-item"><span style="color:var(--glute);font-size:12px;">●</span>&nbsp;Glute exercise</div>
+    <div class="leg-item"><span style="color:var(--muted);font-size:12px;font-style:italic;">italic</span>&nbsp;Optional</div>
+  </div>
+
+  <!-- DESKTOP -->
+  <div class="week-grid">
+
+    <!-- MON -->
+    <div class="day-col t-lower">
+      <div class="day-head"><div class="dnum">MON · DAY 1</div><div class="dname">Lower A — glutes + hams</div><div class="dsub">Strength + glute growth</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-lower">Hinge / glute heavy</span>
+        <div class="ex g"><span class="ex-name">Hip thrusts</span><span class="ex-sets">4 × 6–8</span><span class="ex-note">heavy — see progression tab</span></div>
+        <div class="ex"><span class="ex-name">RDLs</span><span class="ex-sets">3 × 8</span><span class="ex-note">slow eccentric</span></div>
+        <div class="ex"><span class="ex-name">Step-ups</span><span class="ex-sets">3 × 8–10 ea</span></div>
+        <div class="ex"><span class="ex-name">Leg curl</span><span class="ex-sets">3 × 8–10</span><span class="ex-note">slow eccentric</span></div>
+        <div class="ex g"><span class="ex-name">Abduction machine</span><span class="ex-sets">3 × 12–15</span></div>
+      </div>
+    </div>
+
+    <!-- TUE -->
+    <div class="day-col t-upper">
+      <div class="day-head"><div class="dnum">TUE · DAY 2</div><div class="dname">Upper A — push-leaning</div><div class="dsub">Intervals then gym</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-run">Run + gym</span>
+        <div class="run-note">Norwegian 4×4 · 85–95% HRmax · see Running tab</div>
+        <div class="ex-div"></div>
+        <div class="ex"><span class="ex-name">Shoulder press</span><span class="ex-sets">3 × 8–10</span></div>
+        <div class="ex"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex"><span class="ex-name">Dips</span><span class="ex-sets">3 × 6–8</span></div>
+        <div class="ex"><span class="ex-name">Lateral raises</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex"><span class="ex-name">Biceps curls</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="core-note">+ Core A · 10 min · planks, bird dogs, dead bugs</div>
+      </div>
+    </div>
+
+    <!-- WED -->
+    <div class="day-col t-run">
+      <div class="day-head"><div class="dnum">WED</div><div class="dname">Garmin run</div><div class="dsub">Easy</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-run">Garmin</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.9;margin-top:4px;">Easy run per Garmin<br>Active recovery<br>Low readiness? Walk instead<br>No gym</div>
+      </div>
+    </div>
+
+    <!-- THU -->
+    <div class="day-col t-lower">
+      <div class="day-head"><div class="dnum">THU · DAY 3</div><div class="dname">Lower B — quads + glutes</div><div class="dsub">Squat + lengthened glute work</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-lower">Quad / glute</span>
+        <div class="ex"><span class="ex-name">Front squats</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex g"><span class="ex-name">Kas glute bridge</span><span class="ex-sets">3 × 12–15</span><span class="ex-note">50–70% of Mon hip thrust</span></div>
+        <div class="ex"><span class="ex-name">Bulgarian split squats</span><span class="ex-sets">3 × 8–10 ea</span></div>
+        <div class="ex"><span class="ex-name">Leg extension</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex g"><span class="ex-name">Abduction machine</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex"><span class="ex-name">Hyperextensions</span><span class="ex-sets">2 × 12–15</span><span class="ex-note">controlled + light</span></div>
+      </div>
+    </div>
+
+    <!-- FRI -->
+    <div class="day-col t-rest">
+      <div class="day-head"><div class="dnum">FRI</div><div class="dname">Full rest</div><div class="dsub">Recovery</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-rest">Recovery</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.9;margin-top:4px;">No gym<br>No run<br>Walk + mobility optional</div>
+      </div>
+    </div>
+
+    <!-- SAT -->
+    <div class="day-col t-upper">
+      <div class="day-head"><div class="dnum">SAT · DAY 4</div><div class="dname">Upper B — pull-leaning</div><div class="dsub">Gym only · legs rest</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-upper">Upper pull</span>
+        <div class="ex"><span class="ex-name">Seated cable row</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex"><span class="ex-name">Overhead tricep ext</span><span class="ex-sets">3 × 8–12</span></div>
+        <div class="ex"><span class="ex-name">Lateral raises</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="ex"><span class="ex-name">Biceps curls</span><span class="ex-sets">3 × 8</span></div>
+        <div class="ex"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 12–15</span></div>
+        <div class="core-note">+ Core B · 10 min · lower abs focus</div>
+      </div>
+    </div>
+
+    <!-- SUN -->
+    <div class="day-col t-run">
+      <div class="day-head"><div class="dnum">SUN</div><div class="dname">Garmin run</div><div class="dsub">Long / easy</div></div>
+      <div class="day-body">
+        <span class="dtag dtag-run">Garmin</span>
+        <div style="font-size:11px;color:var(--muted);line-height:1.9;margin-top:4px;">Long or easy run per Garmin<br>No gym</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MOBILE SWITCHER -->
+  <div class="day-switcher">
+    <button onclick="changeDay(-1)">&#8592;</button>
+    <div class="day-indicator" id="day-indicator">MON · DAY 1</div>
+    <button onclick="changeDay(1)">&#8594;</button>
+  </div>
+  <div class="day-dots" id="day-dots"></div>
+
+  <div class="day-col-mobile t-lower" id="mob-0">
+    <div class="day-head"><div class="dnum">MON · DAY 1</div><div class="dname">Lower A — glutes + hams</div><div class="dsub">Strength + glute growth</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-lower">Hinge / glute heavy</span>
+    <div class="ex g"><span class="ex-name">Hip thrusts</span><span class="ex-sets">4 × 6–8</span><span class="ex-note">heavy — see progression tab</span></div>
+    <div class="ex"><span class="ex-name">RDLs</span><span class="ex-sets">3 × 8</span><span class="ex-note">slow eccentric</span></div>
+    <div class="ex"><span class="ex-name">Step-ups</span><span class="ex-sets">3 × 8–10 ea</span></div>
+    <div class="ex"><span class="ex-name">Leg curl</span><span class="ex-sets">3 × 8–10</span><span class="ex-note">slow eccentric</span></div>
+    <div class="ex g"><span class="ex-name">Abduction machine</span><span class="ex-sets">3 × 12–15</span></div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-upper hidden" id="mob-1">
+    <div class="day-head"><div class="dnum">TUE · DAY 2</div><div class="dname">Upper A — push-leaning</div><div class="dsub">Intervals then gym</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-run">Run + gym</span>
+    <div class="run-note">Norwegian 4×4 · 85–95% HRmax · see Running tab</div>
+    <div class="ex-div"></div>
+    <div class="ex"><span class="ex-name">Shoulder press</span><span class="ex-sets">3 × 8–10</span></div>
+    <div class="ex"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex"><span class="ex-name">Dips</span><span class="ex-sets">3 × 6–8</span></div>
+    <div class="ex"><span class="ex-name">Lateral raises</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="ex"><span class="ex-name">Biceps curls</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="core-note">+ Core A · 10 min · planks, bird dogs, dead bugs</div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-run hidden" id="mob-2">
+    <div class="day-head"><div class="dnum">WED</div><div class="dname">Garmin run</div><div class="dsub">Easy</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-run">Garmin</span>
+    <div style="font-size:13px;color:var(--muted);line-height:1.9;margin-top:4px;">Easy run per Garmin<br>Active recovery<br>Low readiness? Walk instead<br>No gym</div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-lower hidden" id="mob-3">
+    <div class="day-head"><div class="dnum">THU · DAY 3</div><div class="dname">Lower B — quads + glutes</div><div class="dsub">Squat + lengthened glute work</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-lower">Quad / glute</span>
+    <div class="ex"><span class="ex-name">Front squats</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex g"><span class="ex-name">Kas glute bridge</span><span class="ex-sets">3 × 12–15</span><span class="ex-note">50–70% of Mon hip thrust</span></div>
+    <div class="ex"><span class="ex-name">Bulgarian split squats</span><span class="ex-sets">3 × 8–10 ea</span></div>
+    <div class="ex"><span class="ex-name">Leg extension</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="ex g"><span class="ex-name">Abduction machine</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="ex"><span class="ex-name">Hyperextensions</span><span class="ex-sets">2 × 12–15</span><span class="ex-note">controlled + light</span></div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-rest hidden" id="mob-4">
+    <div class="day-head"><div class="dnum">FRI</div><div class="dname">Full rest</div><div class="dsub">Recovery</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-rest">Recovery</span>
+    <div style="font-size:13px;color:var(--muted);line-height:1.9;margin-top:4px;">No gym<br>No run<br>Walk + mobility optional</div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-upper hidden" id="mob-5">
+    <div class="day-head"><div class="dnum">SAT · DAY 4</div><div class="dname">Upper B — pull-leaning</div><div class="dsub">Gym only · legs rest</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-upper">Upper pull</span>
+    <div class="ex"><span class="ex-name">Seated cable row</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex"><span class="ex-name">Lat pulldown</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex"><span class="ex-name">Overhead tricep ext</span><span class="ex-sets">3 × 8–12</span></div>
+    <div class="ex"><span class="ex-name">Lateral raises</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="ex"><span class="ex-name">Biceps curls</span><span class="ex-sets">3 × 8</span></div>
+    <div class="ex"><span class="ex-name">Face pulls</span><span class="ex-sets">3 × 12–15</span></div>
+    <div class="core-note">+ Core B · 10 min · lower abs focus</div>
+    </div>
+  </div>
+  <div class="day-col-mobile t-run hidden" id="mob-6">
+    <div class="day-head"><div class="dnum">SUN</div><div class="dname">Garmin run</div><div class="dsub">Long / easy</div></div>
+    <div class="day-body">
+    <span class="dtag dtag-run">Garmin</span>
+    <div style="font-size:13px;color:var(--muted);line-height:1.9;margin-top:4px;">Long or easy run per Garmin<br>No gym</div>
+    </div>
+  </div>
+
+  <div class="info info-green" style="margin-top:1rem;">
+    <strong style="color:#6abf7a;">Split:</strong> Mon lower A (heavy hip thrust) → Tue Norwegian 4×4 + upper A → Wed Garmin run → Thu lower B (quads + glutes) → Fri rest → Sat upper B → Sun Garmin run. Three runs a week: the 4×4 is the one hard session, and the two Garmin runs follow whatever Garmin prescribes. Friday is a full rest day, neither heavy lower day follows a hard run, and Saturday gives the legs a day off before Sunday. Walk daily on non-run days.
+  </div>
+</div>
+
+<!-- ═══ WEIGHTS ═══ -->
+<div id="page-weights" class="page">
+  <div class="page-title">Weight log — track week by week</div>
+  <p class="wt-intro">Tap any cell and type your weight in kg. Saves automatically. Orange = glute exercise. Italic = optional.</p>
+
+  <!-- MON -->
+  <div class="wt-day">
+    <div class="wt-day-hdr"><div class="wt-day-name">Monday — Lower A: glutes + hamstrings</div><div style="font-size:11px;color:var(--lower);">Strength + glute growth</div></div>
+    <div class="wt-scroll"><table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec g">Hip thrusts</td><td class="sc">4×6–8</td><td><input class="wi" placeholder="—" data-id="m1-ht-1"></td><td><input class="wi" placeholder="—" data-id="m1-ht-2"></td><td><input class="wi" placeholder="—" data-id="m1-ht-3"></td><td><input class="wi" placeholder="—" data-id="m1-ht-4"></td><td><input class="wi" placeholder="—" data-id="m1-ht-5"></td><td><input class="wi" placeholder="—" data-id="m1-ht-6"></td></tr>
+      <tr><td class="ec">RDLs</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="m1-rdl-1"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-2"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-3"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-4"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-5"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-6"></td></tr>
+      <tr><td class="ec">Step-ups</td><td class="sc">3×8–10ea</td><td><input class="wi" placeholder="—" data-id="m1-su-1"></td><td><input class="wi" placeholder="—" data-id="m1-su-2"></td><td><input class="wi" placeholder="—" data-id="m1-su-3"></td><td><input class="wi" placeholder="—" data-id="m1-su-4"></td><td><input class="wi" placeholder="—" data-id="m1-su-5"></td><td><input class="wi" placeholder="—" data-id="m1-su-6"></td></tr>
+      <tr><td class="ec">Leg curl</td><td class="sc">3×8–10</td><td><input class="wi" placeholder="—" data-id="m1-hc-1"></td><td><input class="wi" placeholder="—" data-id="m1-hc-2"></td><td><input class="wi" placeholder="—" data-id="m1-hc-3"></td><td><input class="wi" placeholder="—" data-id="m1-hc-4"></td><td><input class="wi" placeholder="—" data-id="m1-hc-5"></td><td><input class="wi" placeholder="—" data-id="m1-hc-6"></td></tr>
+      <tr><td class="ec g">Abduction machine</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="m1-ab-1"></td><td><input class="wi" placeholder="—" data-id="m1-ab-2"></td><td><input class="wi" placeholder="—" data-id="m1-ab-3"></td><td><input class="wi" placeholder="—" data-id="m1-ab-4"></td><td><input class="wi" placeholder="—" data-id="m1-ab-5"></td><td><input class="wi" placeholder="—" data-id="m1-ab-6"></td></tr>
+    </tbody></table></div>
+    <table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec g">Hip thrusts</td><td class="sc">4×6–8</td><td><input class="wi" placeholder="—" data-id="m1-ht-1"></td><td><input class="wi" placeholder="—" data-id="m1-ht-2"></td><td><input class="wi" placeholder="—" data-id="m1-ht-3"></td><td><input class="wi" placeholder="—" data-id="m1-ht-4"></td><td><input class="wi" placeholder="—" data-id="m1-ht-5"></td><td><input class="wi" placeholder="—" data-id="m1-ht-6"></td></tr>
+      <tr><td class="ec">RDLs</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="m1-rdl-1"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-2"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-3"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-4"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-5"></td><td><input class="wi" placeholder="—" data-id="m1-rdl-6"></td></tr>
+      <tr><td class="ec">Step-ups</td><td class="sc">3×8–10ea</td><td><input class="wi" placeholder="—" data-id="m1-su-1"></td><td><input class="wi" placeholder="—" data-id="m1-su-2"></td><td><input class="wi" placeholder="—" data-id="m1-su-3"></td><td><input class="wi" placeholder="—" data-id="m1-su-4"></td><td><input class="wi" placeholder="—" data-id="m1-su-5"></td><td><input class="wi" placeholder="—" data-id="m1-su-6"></td></tr>
+      <tr><td class="ec">Leg curl</td><td class="sc">3×8–10</td><td><input class="wi" placeholder="—" data-id="m1-hc-1"></td><td><input class="wi" placeholder="—" data-id="m1-hc-2"></td><td><input class="wi" placeholder="—" data-id="m1-hc-3"></td><td><input class="wi" placeholder="—" data-id="m1-hc-4"></td><td><input class="wi" placeholder="—" data-id="m1-hc-5"></td><td><input class="wi" placeholder="—" data-id="m1-hc-6"></td></tr>
+      <tr><td class="ec g">Abduction machine</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="m1-ab-1"></td><td><input class="wi" placeholder="—" data-id="m1-ab-2"></td><td><input class="wi" placeholder="—" data-id="m1-ab-3"></td><td><input class="wi" placeholder="—" data-id="m1-ab-4"></td><td><input class="wi" placeholder="—" data-id="m1-ab-5"></td><td><input class="wi" placeholder="—" data-id="m1-ab-6"></td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- TUE -->
+  <div class="wt-day">
+    <div class="wt-day-hdr"><div class="wt-day-name">Tuesday — Upper A (push-leaning)</div><div style="font-size:11px;color:var(--upper);">After Norwegian 4×4</div></div>
+    <div class="wt-scroll"><table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Shoulder press</td><td class="sc">3×8–10</td><td><input class="wi" placeholder="—" data-id="t2-sp-1"></td><td><input class="wi" placeholder="—" data-id="t2-sp-2"></td><td><input class="wi" placeholder="—" data-id="t2-sp-3"></td><td><input class="wi" placeholder="—" data-id="t2-sp-4"></td><td><input class="wi" placeholder="—" data-id="t2-sp-5"></td><td><input class="wi" placeholder="—" data-id="t2-sp-6"></td></tr>
+      <tr><td class="ec">Lat pulldown</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="t2-lat-1"></td><td><input class="wi" placeholder="—" data-id="t2-lat-2"></td><td><input class="wi" placeholder="—" data-id="t2-lat-3"></td><td><input class="wi" placeholder="—" data-id="t2-lat-4"></td><td><input class="wi" placeholder="—" data-id="t2-lat-5"></td><td><input class="wi" placeholder="—" data-id="t2-lat-6"></td></tr>
+      <tr><td class="ec">Dips</td><td class="sc">3×6–8</td><td><input class="wi" placeholder="—" data-id="t2-dips-1"></td><td><input class="wi" placeholder="—" data-id="t2-dips-2"></td><td><input class="wi" placeholder="—" data-id="t2-dips-3"></td><td><input class="wi" placeholder="—" data-id="t2-dips-4"></td><td><input class="wi" placeholder="—" data-id="t2-dips-5"></td><td><input class="wi" placeholder="—" data-id="t2-dips-6"></td></tr>
+      <tr><td class="ec">Lateral raises</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="t2-lr-1"></td><td><input class="wi" placeholder="—" data-id="t2-lr-2"></td><td><input class="wi" placeholder="—" data-id="t2-lr-3"></td><td><input class="wi" placeholder="—" data-id="t2-lr-4"></td><td><input class="wi" placeholder="—" data-id="t2-lr-5"></td><td><input class="wi" placeholder="—" data-id="t2-lr-6"></td></tr>
+      <tr><td class="ec">Biceps curls</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="t2-bc-1"></td><td><input class="wi" placeholder="—" data-id="t2-bc-2"></td><td><input class="wi" placeholder="—" data-id="t2-bc-3"></td><td><input class="wi" placeholder="—" data-id="t2-bc-4"></td><td><input class="wi" placeholder="—" data-id="t2-bc-5"></td><td><input class="wi" placeholder="—" data-id="t2-bc-6"></td></tr>
+      <tr><td class="ec">Face pulls</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="t2-fp-1"></td><td><input class="wi" placeholder="—" data-id="t2-fp-2"></td><td><input class="wi" placeholder="—" data-id="t2-fp-3"></td><td><input class="wi" placeholder="—" data-id="t2-fp-4"></td><td><input class="wi" placeholder="—" data-id="t2-fp-5"></td><td><input class="wi" placeholder="—" data-id="t2-fp-6"></td></tr>
+    </tbody></table></div>
+    <table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Shoulder press</td><td class="sc">3×8–10</td><td><input class="wi" placeholder="—" data-id="t2-sp-1"></td><td><input class="wi" placeholder="—" data-id="t2-sp-2"></td><td><input class="wi" placeholder="—" data-id="t2-sp-3"></td><td><input class="wi" placeholder="—" data-id="t2-sp-4"></td><td><input class="wi" placeholder="—" data-id="t2-sp-5"></td><td><input class="wi" placeholder="—" data-id="t2-sp-6"></td></tr>
+      <tr><td class="ec">Lat pulldown</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="t2-lat-1"></td><td><input class="wi" placeholder="—" data-id="t2-lat-2"></td><td><input class="wi" placeholder="—" data-id="t2-lat-3"></td><td><input class="wi" placeholder="—" data-id="t2-lat-4"></td><td><input class="wi" placeholder="—" data-id="t2-lat-5"></td><td><input class="wi" placeholder="—" data-id="t2-lat-6"></td></tr>
+      <tr><td class="ec">Dips</td><td class="sc">3×6–8</td><td><input class="wi" placeholder="—" data-id="t2-dips-1"></td><td><input class="wi" placeholder="—" data-id="t2-dips-2"></td><td><input class="wi" placeholder="—" data-id="t2-dips-3"></td><td><input class="wi" placeholder="—" data-id="t2-dips-4"></td><td><input class="wi" placeholder="—" data-id="t2-dips-5"></td><td><input class="wi" placeholder="—" data-id="t2-dips-6"></td></tr>
+      <tr><td class="ec">Lateral raises</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="t2-lr-1"></td><td><input class="wi" placeholder="—" data-id="t2-lr-2"></td><td><input class="wi" placeholder="—" data-id="t2-lr-3"></td><td><input class="wi" placeholder="—" data-id="t2-lr-4"></td><td><input class="wi" placeholder="—" data-id="t2-lr-5"></td><td><input class="wi" placeholder="—" data-id="t2-lr-6"></td></tr>
+      <tr><td class="ec">Biceps curls</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="t2-bc-1"></td><td><input class="wi" placeholder="—" data-id="t2-bc-2"></td><td><input class="wi" placeholder="—" data-id="t2-bc-3"></td><td><input class="wi" placeholder="—" data-id="t2-bc-4"></td><td><input class="wi" placeholder="—" data-id="t2-bc-5"></td><td><input class="wi" placeholder="—" data-id="t2-bc-6"></td></tr>
+      <tr><td class="ec">Face pulls</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="t2-fp-1"></td><td><input class="wi" placeholder="—" data-id="t2-fp-2"></td><td><input class="wi" placeholder="—" data-id="t2-fp-3"></td><td><input class="wi" placeholder="—" data-id="t2-fp-4"></td><td><input class="wi" placeholder="—" data-id="t2-fp-5"></td><td><input class="wi" placeholder="—" data-id="t2-fp-6"></td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- THU -->
+  <div class="wt-day">
+    <div class="wt-day-hdr"><div class="wt-day-name">Thursday — Lower B: quads + glutes</div><div style="font-size:11px;color:var(--lower);">Kas bridge at 50–70% of Monday hip thrust</div></div>
+    <div class="wt-scroll"><table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Front squats</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="th3-fs-1"></td><td><input class="wi" placeholder="—" data-id="th3-fs-2"></td><td><input class="wi" placeholder="—" data-id="th3-fs-3"></td><td><input class="wi" placeholder="—" data-id="th3-fs-4"></td><td><input class="wi" placeholder="—" data-id="th3-fs-5"></td><td><input class="wi" placeholder="—" data-id="th3-fs-6"></td></tr>
+      <tr><td class="ec g">Kas glute bridge</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-kas-1"></td><td><input class="wi" placeholder="—" data-id="th3-kas-2"></td><td><input class="wi" placeholder="—" data-id="th3-kas-3"></td><td><input class="wi" placeholder="—" data-id="th3-kas-4"></td><td><input class="wi" placeholder="—" data-id="th3-kas-5"></td><td><input class="wi" placeholder="—" data-id="th3-kas-6"></td></tr>
+      <tr><td class="ec">Bulgarian split squats</td><td class="sc">3×8–10ea</td><td><input class="wi" placeholder="—" data-id="th3-bss-1"></td><td><input class="wi" placeholder="—" data-id="th3-bss-2"></td><td><input class="wi" placeholder="—" data-id="th3-bss-3"></td><td><input class="wi" placeholder="—" data-id="th3-bss-4"></td><td><input class="wi" placeholder="—" data-id="th3-bss-5"></td><td><input class="wi" placeholder="—" data-id="th3-bss-6"></td></tr>
+      <tr><td class="ec">Leg extension</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-le-1"></td><td><input class="wi" placeholder="—" data-id="th3-le-2"></td><td><input class="wi" placeholder="—" data-id="th3-le-3"></td><td><input class="wi" placeholder="—" data-id="th3-le-4"></td><td><input class="wi" placeholder="—" data-id="th3-le-5"></td><td><input class="wi" placeholder="—" data-id="th3-le-6"></td></tr>
+      <tr><td class="ec g">Abduction machine</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-ab-1"></td><td><input class="wi" placeholder="—" data-id="th3-ab-2"></td><td><input class="wi" placeholder="—" data-id="th3-ab-3"></td><td><input class="wi" placeholder="—" data-id="th3-ab-4"></td><td><input class="wi" placeholder="—" data-id="th3-ab-5"></td><td><input class="wi" placeholder="—" data-id="th3-ab-6"></td></tr>
+      <tr><td class="ec">Hyperextensions</td><td class="sc">2×12–15</td><td><input class="wi" placeholder="—" data-id="th3-hyp-1"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-2"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-3"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-4"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-5"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-6"></td></tr>
+    </tbody></table></div>
+    <table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Front squats</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="th3-fs-1"></td><td><input class="wi" placeholder="—" data-id="th3-fs-2"></td><td><input class="wi" placeholder="—" data-id="th3-fs-3"></td><td><input class="wi" placeholder="—" data-id="th3-fs-4"></td><td><input class="wi" placeholder="—" data-id="th3-fs-5"></td><td><input class="wi" placeholder="—" data-id="th3-fs-6"></td></tr>
+      <tr><td class="ec g">Kas glute bridge</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-kas-1"></td><td><input class="wi" placeholder="—" data-id="th3-kas-2"></td><td><input class="wi" placeholder="—" data-id="th3-kas-3"></td><td><input class="wi" placeholder="—" data-id="th3-kas-4"></td><td><input class="wi" placeholder="—" data-id="th3-kas-5"></td><td><input class="wi" placeholder="—" data-id="th3-kas-6"></td></tr>
+      <tr><td class="ec">Bulgarian split squats</td><td class="sc">3×8–10ea</td><td><input class="wi" placeholder="—" data-id="th3-bss-1"></td><td><input class="wi" placeholder="—" data-id="th3-bss-2"></td><td><input class="wi" placeholder="—" data-id="th3-bss-3"></td><td><input class="wi" placeholder="—" data-id="th3-bss-4"></td><td><input class="wi" placeholder="—" data-id="th3-bss-5"></td><td><input class="wi" placeholder="—" data-id="th3-bss-6"></td></tr>
+      <tr><td class="ec">Leg extension</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-le-1"></td><td><input class="wi" placeholder="—" data-id="th3-le-2"></td><td><input class="wi" placeholder="—" data-id="th3-le-3"></td><td><input class="wi" placeholder="—" data-id="th3-le-4"></td><td><input class="wi" placeholder="—" data-id="th3-le-5"></td><td><input class="wi" placeholder="—" data-id="th3-le-6"></td></tr>
+      <tr><td class="ec g">Abduction machine</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="th3-ab-1"></td><td><input class="wi" placeholder="—" data-id="th3-ab-2"></td><td><input class="wi" placeholder="—" data-id="th3-ab-3"></td><td><input class="wi" placeholder="—" data-id="th3-ab-4"></td><td><input class="wi" placeholder="—" data-id="th3-ab-5"></td><td><input class="wi" placeholder="—" data-id="th3-ab-6"></td></tr>
+      <tr><td class="ec">Hyperextensions</td><td class="sc">2×12–15</td><td><input class="wi" placeholder="—" data-id="th3-hyp-1"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-2"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-3"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-4"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-5"></td><td><input class="wi" placeholder="—" data-id="th3-hyp-6"></td></tr>
+    </tbody></table>
+  </div>
+
+  <!-- SAT -->
+  <div class="wt-day">
+    <div class="wt-day-hdr"><div class="wt-day-name">Saturday — Upper B (pull-leaning)</div><div style="font-size:11px;color:var(--upper);">Gym only</div></div>
+    <div class="wt-scroll"><table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Seated cable row</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-cr-1"></td><td><input class="wi" placeholder="—" data-id="f4-cr-2"></td><td><input class="wi" placeholder="—" data-id="f4-cr-3"></td><td><input class="wi" placeholder="—" data-id="f4-cr-4"></td><td><input class="wi" placeholder="—" data-id="f4-cr-5"></td><td><input class="wi" placeholder="—" data-id="f4-cr-6"></td></tr>
+      <tr><td class="ec">Lat pulldown</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-pu-1"></td><td><input class="wi" placeholder="—" data-id="f4-pu-2"></td><td><input class="wi" placeholder="—" data-id="f4-pu-3"></td><td><input class="wi" placeholder="—" data-id="f4-pu-4"></td><td><input class="wi" placeholder="—" data-id="f4-pu-5"></td><td><input class="wi" placeholder="—" data-id="f4-pu-6"></td></tr>
+      <tr><td class="ec">Overhead tricep ext</td><td class="sc">3×8–12</td><td><input class="wi" placeholder="—" data-id="f4-tri-1"></td><td><input class="wi" placeholder="—" data-id="f4-tri-2"></td><td><input class="wi" placeholder="—" data-id="f4-tri-3"></td><td><input class="wi" placeholder="—" data-id="f4-tri-4"></td><td><input class="wi" placeholder="—" data-id="f4-tri-5"></td><td><input class="wi" placeholder="—" data-id="f4-tri-6"></td></tr>
+      <tr><td class="ec">Lateral raises</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="f4-lr-1"></td><td><input class="wi" placeholder="—" data-id="f4-lr-2"></td><td><input class="wi" placeholder="—" data-id="f4-lr-3"></td><td><input class="wi" placeholder="—" data-id="f4-lr-4"></td><td><input class="wi" placeholder="—" data-id="f4-lr-5"></td><td><input class="wi" placeholder="—" data-id="f4-lr-6"></td></tr>
+      <tr><td class="ec">Biceps curls</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-bc-1"></td><td><input class="wi" placeholder="—" data-id="f4-bc-2"></td><td><input class="wi" placeholder="—" data-id="f4-bc-3"></td><td><input class="wi" placeholder="—" data-id="f4-bc-4"></td><td><input class="wi" placeholder="—" data-id="f4-bc-5"></td><td><input class="wi" placeholder="—" data-id="f4-bc-6"></td></tr>
+      <tr><td class="ec">Face pulls</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="f4-fp-1"></td><td><input class="wi" placeholder="—" data-id="f4-fp-2"></td><td><input class="wi" placeholder="—" data-id="f4-fp-3"></td><td><input class="wi" placeholder="—" data-id="f4-fp-4"></td><td><input class="wi" placeholder="—" data-id="f4-fp-5"></td><td><input class="wi" placeholder="—" data-id="f4-fp-6"></td></tr>
+    </tbody></table></div>
+    <table class="wt-tbl"><thead><tr><th>Exercise</th><th>Sets×Reps</th><th class="wk">Wk 1</th><th class="wk">Wk 2</th><th class="wk">Wk 3</th><th class="wk">Wk 4</th><th class="wk">Wk 5</th><th class="wk">Wk 6</th></tr></thead><tbody>
+      <tr><td class="ec">Seated cable row</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-cr-1"></td><td><input class="wi" placeholder="—" data-id="f4-cr-2"></td><td><input class="wi" placeholder="—" data-id="f4-cr-3"></td><td><input class="wi" placeholder="—" data-id="f4-cr-4"></td><td><input class="wi" placeholder="—" data-id="f4-cr-5"></td><td><input class="wi" placeholder="—" data-id="f4-cr-6"></td></tr>
+      <tr><td class="ec">Lat pulldown</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-pu-1"></td><td><input class="wi" placeholder="—" data-id="f4-pu-2"></td><td><input class="wi" placeholder="—" data-id="f4-pu-3"></td><td><input class="wi" placeholder="—" data-id="f4-pu-4"></td><td><input class="wi" placeholder="—" data-id="f4-pu-5"></td><td><input class="wi" placeholder="—" data-id="f4-pu-6"></td></tr>
+      <tr><td class="ec">Overhead tricep ext</td><td class="sc">3×8–12</td><td><input class="wi" placeholder="—" data-id="f4-tri-1"></td><td><input class="wi" placeholder="—" data-id="f4-tri-2"></td><td><input class="wi" placeholder="—" data-id="f4-tri-3"></td><td><input class="wi" placeholder="—" data-id="f4-tri-4"></td><td><input class="wi" placeholder="—" data-id="f4-tri-5"></td><td><input class="wi" placeholder="—" data-id="f4-tri-6"></td></tr>
+      <tr><td class="ec">Lateral raises</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="f4-lr-1"></td><td><input class="wi" placeholder="—" data-id="f4-lr-2"></td><td><input class="wi" placeholder="—" data-id="f4-lr-3"></td><td><input class="wi" placeholder="—" data-id="f4-lr-4"></td><td><input class="wi" placeholder="—" data-id="f4-lr-5"></td><td><input class="wi" placeholder="—" data-id="f4-lr-6"></td></tr>
+      <tr><td class="ec">Biceps curls</td><td class="sc">3×8</td><td><input class="wi" placeholder="—" data-id="f4-bc-1"></td><td><input class="wi" placeholder="—" data-id="f4-bc-2"></td><td><input class="wi" placeholder="—" data-id="f4-bc-3"></td><td><input class="wi" placeholder="—" data-id="f4-bc-4"></td><td><input class="wi" placeholder="—" data-id="f4-bc-5"></td><td><input class="wi" placeholder="—" data-id="f4-bc-6"></td></tr>
+      <tr><td class="ec">Face pulls</td><td class="sc">3×12–15</td><td><input class="wi" placeholder="—" data-id="f4-fp-1"></td><td><input class="wi" placeholder="—" data-id="f4-fp-2"></td><td><input class="wi" placeholder="—" data-id="f4-fp-3"></td><td><input class="wi" placeholder="—" data-id="f4-fp-4"></td><td><input class="wi" placeholder="—" data-id="f4-fp-5"></td><td><input class="wi" placeholder="—" data-id="f4-fp-6"></td></tr>
+    </tbody></table>
+  </div>
+  <div class="info info-amber">Saves automatically to your browser each session.</div>
+</div>
+
+<!-- ═══ RUNNING ═══ -->
+<div id="page-running" class="page">
+  <div class="page-title">Running guide</div>
+  <div class="sec">
+    <div class="sec-label">Weekly runs — 3 sessions</div>
+    <table class="tbl"><thead><tr><th>Day</th><th>Session</th><th>Set by</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Tue</td><td><span class="pill pill-hard">Norwegian 4×4</span></td><td>This plan</td><td>VO2max session · run first, then Upper A</td></tr>
+      <tr><td>Wed</td><td><span class="pill pill-tempo">Per Garmin</span></td><td>Garmin</td><td>Whatever Garmin prescribes · no gym</td></tr>
+      <tr><td>Sun</td><td><span class="pill pill-easy">Per Garmin</span></td><td>Garmin</td><td>Usually the long run · legs fresh after upper-only Saturday</td></tr>
+    </tbody></table>
+    <div class="info info-teal" style="margin-top:1rem;"><strong>Garmin setup:</strong> set run days to Wednesday and Sunday, with Sunday as the long-run day. Record the 4×4 on your watch as a workout so it counts toward training load and Garmin adjusts the other runs around it.</div>
+  </div>
+  <div class="sec">
+    <div class="sec-label">Norwegian 4×4 — Tuesday</div>
+    <table class="tbl"><thead><tr><th>Phase</th><th>Duration</th><th>Intensity</th><th>Feel</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill pill-easy">Warm-up</span></td><td>10 min</td><td>Build gradually</td><td>Easy jog, finishing with a couple of short pickups</td></tr>
+      <tr><td><span class="pill pill-hard">Interval 1</span></td><td>4 min</td><td>85–95% HRmax</td><td>Hard but sustainable · can't talk in full sentences</td></tr>
+      <tr><td><span class="pill pill-float">Recovery</span></td><td>3 min</td><td>60–70% HRmax</td><td>Easy jog or brisk walk · keep moving</td></tr>
+      <tr><td><span class="pill pill-hard">Interval 2</span></td><td>4 min</td><td>85–95% HRmax</td><td>Same effort</td></tr>
+      <tr><td><span class="pill pill-float">Recovery</span></td><td>3 min</td><td>60–70% HRmax</td><td>Easy jog or brisk walk</td></tr>
+      <tr><td><span class="pill pill-hard">Interval 3</span></td><td>4 min</td><td>85–95% HRmax</td><td>Same effort</td></tr>
+      <tr><td><span class="pill pill-float">Recovery</span></td><td>3 min</td><td>60–70% HRmax</td><td>Easy jog or brisk walk</td></tr>
+      <tr><td><span class="pill pill-hard">Interval 4</span></td><td>4 min</td><td>85–95% HRmax</td><td>Hold the effort to the end</td></tr>
+      <tr><td><span class="pill pill-easy">Cool-down</span></td><td>5–10 min</td><td>Easy</td><td>Slow jog, walk the last minute</td></tr>
+    </tbody></table>
+    <div class="info info-glute" style="margin-top:1rem;">Heart rate lags — the first minute of each interval will read low, so go by effort early and let HR catch up. Uphill treadmill running, a bike or a rower gives the same stimulus with less impact, useful when legs are heavy from Monday. Low training readiness or HRV on the day? Do 3 intervals, or swap for an easy run.</div>
+  </div>
+  <div class="sec">
+    <div class="sec-label">4×4 progression</div>
+    <div class="prog-row">
+      <div class="prog-card"><div class="pwk">Weeks 1–2</div><div class="pwv">85–90% HRmax</div><div class="pwsub">Learn the pacing · finish feeling you could do a 5th</div></div>
+      <div class="prog-card"><div class="pwk">Weeks 3–6</div><div class="pwv">90–95% HRmax</div><div class="pwsub">Full intensity · even effort across all 4</div></div>
+      <div class="prog-card"><div class="pwk">Week 7+</div><div class="pwv">Same HR, more speed</div><div class="pwsub">Progress pace or incline, not reps</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CARDIO ═══ -->
+<div id="page-cardio" class="page">
+  <div class="page-title">Cardio settings</div>
+  <div class="sec">
+    <div class="sec-label">Cardio by day</div>
+    <table class="tbl"><thead><tr><th>Day</th><th>Cardio</th><th>Duration</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Mon · Lower A</td><td>Walking</td><td>Daily steps</td><td>No gym finisher. Get your walking in across the day.</td></tr>
+      <tr><td>Tue · Upper A</td><td>Norwegian 4×4</td><td>~40 min</td><td>85–95% HRmax intervals · before the gym session · see Running tab</td></tr>
+      <tr><td>Wed · Run</td><td>Garmin run</td><td>Per Garmin</td><td>As prescribed by Garmin · no gym</td></tr>
+      <tr><td>Thu · Lower B</td><td>Walking</td><td>Daily steps</td><td>No gym finisher. Friday is a full rest day.</td></tr>
+      <tr><td>Fri · Rest</td><td>Walking</td><td>Daily steps</td><td>Full rest day. Walk + light mobility only.</td></tr>
+      <tr><td>Sat · Upper B</td><td>Walking</td><td>Daily steps</td><td>No run. Legs rest before Sunday's long run.</td></tr>
+      <tr><td>Sun · Run</td><td>Garmin run</td><td>Per Garmin</td><td>Long or easy run · no gym</td></tr>
+    </tbody></table>
+    <div class="info info-amber" style="margin-top:1rem;">Daily walking replaces the old Zone 2 incline-walk and stairmaster finishers. It adds easy fat-burning volume without eating into recovery for lifting and running.</div>
+  </div>
+</div>
+
+<!-- ═══ CORE ═══ -->
+<div id="page-core" class="page">
+  <div class="page-title">Core — 2 sessions / week · ~10 min each</div>
+  <div class="info info-purple" style="margin-bottom:1.5rem;">End of Tue (Upper A) and Sat (Upper B), after the gym session.</div>
+  <div class="core-grid">
+    <div class="core-card">
+      <div class="core-sess">Session A — Tuesday · planks + bird dogs</div>
+      <div class="core-ex"><div class="core-ex-name">Plank hold</div><div class="core-ex-sets">3 × 30–45 sec</div><div class="core-ex-why">Anti-extension stability — same bracing pattern needed during heavy hip thrusts, RDLs and deadlifts</div></div>
+      <div class="core-ex"><div class="core-ex-name">Bird dogs</div><div class="core-ex-sets">3 × 10 each side</div><div class="core-ex-why">Teaches core to stabilise the spine while limbs move — directly carries over to Bulgarian split squats and running gait</div></div>
+      <div class="core-ex"><div class="core-ex-name">Dead bugs</div><div class="core-ex-sets">3 × 10 each side</div><div class="core-ex-why">Best anti-extension exercise — protects lower back during all the hinge work on Monday</div></div>
+      <div class="core-focus-box">Anti-extension · spinal stability · lower back protection</div>
+    </div>
+    <div class="core-card">
+      <div class="core-sess">Session B — Saturday · lower abs focus</div>
+      <div class="core-ex"><div class="core-ex-name">Hollow body hold</div><div class="core-ex-sets">3 × 20–30 sec</div><div class="core-ex-why">Full-body tension — one of the hardest core stability moves. Transfers to every lift.</div></div>
+      <div class="core-ex"><div class="core-ex-name">Hanging knee raises / leg raises</div><div class="core-ex-sets">3 × 12–15</div><div class="core-ex-why">Direct lower ab work — also builds grip strength for your pull exercises</div></div>
+      <div class="core-ex"><div class="core-ex-name">Pallof press</div><div class="core-ex-sets">3 × 12 each side</div><div class="core-ex-why">Anti-rotation — improves running arm drive and stability during rows</div></div>
+      <div class="core-focus-box">Lower abs · anti-rotation · running stability</div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-label">Progression</div>
+    <table class="tbl"><thead><tr><th>Weeks</th><th>Holds</th><th>Reps</th><th>Load</th></tr></thead>
+    <tbody>
+      <tr><td>1–2</td><td>30 sec</td><td>10–12</td><td>Bodyweight only — nail the form</td></tr>
+      <tr><td>3–4</td><td>40 sec</td><td>12–15</td><td>Add light cable resistance on Pallof</td></tr>
+      <tr><td>5–6</td><td>45–60 sec</td><td>15</td><td>Increase cable weight — treat like any other lift</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ═══ HIP THRUST PROG ═══ -->
+<div id="page-hipthrust" class="page">
+  <div class="page-title">Hip thrust progression — core growth driver</div>
+  <div class="info info-glute" style="margin-bottom:1.5rem;">Hip thrusts are the main glute strength driver in this plan. Monday is your heavy hip-thrust day. Thursday's Kas glute bridge runs at 50–70% of Monday's weight for higher reps. Treat them differently.</div>
+  <div class="ht-grid">
+    <div class="ht-card">
+      <div class="ht-label">Monday — heavy strength</div>
+      <div class="ht-step"><div class="ht-num">1.</div><div class="ht-text">Start at a weight you can do <strong>4×6 with perfect form</strong>. If unsure, go lighter — form matters more than weight here.</div></div>
+      <div class="ht-step"><div class="ht-num">2.</div><div class="ht-text">Work that weight until you hit <strong>4×8 comfortably</strong> — usually takes 1–3 sessions.</div></div>
+      <div class="ht-step"><div class="ht-num">3.</div><div class="ht-text"><strong>Add 5 kg</strong> and reset back to 4×6. Repeat the cycle.</div></div>
+      <div class="ht-step"><div class="ht-num">4.</div><div class="ht-text">Every rep: <strong>drive through heels, full hip extension at top, 1 sec hold</strong>. No half reps.</div></div>
+      <div class="ht-step"><div class="ht-num">5.</div><div class="ht-text">Every 4–5 weeks, deload by <strong>about 20%</strong> for one week (same as the rest of the plan), then push past your previous best.</div></div>
+    </div>
+    <div class="ht-card">
+      <div class="ht-label">Thursday — Kas glute bridge</div>
+      <div class="ht-step"><div class="ht-num">1.</div><div class="ht-text">Use <strong>50–70% of Monday's hip-thrust weight</strong>. If Monday is 80 kg, Thursday is 40–56 kg.</div></div>
+      <div class="ht-step"><div class="ht-num">2.</div><div class="ht-text">Target <strong>3×12–15 reps</strong>. Start at 12 and progress to 15 before adding weight.</div></div>
+      <div class="ht-step"><div class="ht-num">3.</div><div class="ht-text">Short range: <strong>hips move only from mid-range to full lockout</strong>, shins vertical, constant tension. Feel the glute, not the lower back.</div></div>
+      <div class="ht-step"><div class="ht-num">4.</div><div class="ht-text">Progress reps first (12 → 15), then increase weight by <strong>2.5–5 kg</strong> and reset to 12.</div></div>
+      <div class="ht-step"><div class="ht-num">5.</div><div class="ht-text">Thursday weight tracks Monday — as Monday goes up, Thursday goes up proportionally.</div></div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-label">Example progression over 8 weeks</div>
+    <table class="tbl"><thead><tr><th>Week</th><th>Monday (heavy)</th><th>Thursday (Kas bridge)</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>1–2</td><td>4×6 @ baseline</td><td>3×12 @ 50–70%</td><td>Establish your starting weight, nail the form</td></tr>
+      <tr><td>3</td><td>4×7–8 @ same weight</td><td>3×13–14 @ 50–70%</td><td>Reps climbing — good sign</td></tr>
+      <tr><td>4</td><td>4×8 @ same weight → add 5 kg</td><td>3×15 → add weight</td><td>Deload week if 4–5 weeks in</td></tr>
+      <tr><td>5–6</td><td>4×6 @ new weight</td><td>3×12 @ new 50–70%</td><td>Repeat cycle with heavier load</td></tr>
+      <tr><td>7–8</td><td>4×8 @ new weight</td><td>3×15 @ new 50–70%</td><td>Another weight jump ready</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ═══ STRATEGY ═══ -->
+<div id="page-strategy" class="page">
+  <div class="page-title">Weight progression strategy</div>
+  <div class="strat-grid">
+    <div class="strat-card"><div class="strat-title">The rule</div><div class="strat-body">Hit the <strong>top of your rep range for all sets</strong> with good form, two sessions in a row → increase weight next session. Simple, repeatable.</div></div>
+    <div class="strat-card"><div class="strat-title">Compound lifts</div><div class="strat-body">Hip thrusts, RDLs, squats, rows, press → <strong>+2.5–5 kg</strong>. Never sacrifice depth or form. Slow eccentrics on RDLs and hamstring curls — always.</div></div>
+    <div class="strat-card"><div class="strat-title">Isolation moves</div><div class="strat-body">Curls, lateral raises, triceps extensions, leg extensions → <strong>+1–2 kg</strong>. Small jumps matter. If the next dumbbell is too heavy, use a band to bridge the gap.</div></div>
+    <div class="strat-card"><div class="strat-title">Glute machines</div><div class="strat-body">Abduction machine, Kas bridge → <strong>+2–5 kg</strong>. Strong squeeze at the top every rep. Can't feel your glute? Drop the weight — the load is bypassing the muscle.</div></div>
+    <div class="strat-card"><div class="strat-title">Deload — every 4–5 weeks</div><div class="strat-body">Drop all weights <strong>20% for one week</strong>. Same exercises and reps — just lighter. This is when your body consolidates gains. Non-negotiable.</div></div>
+    <div class="strat-card"><div class="strat-title">Plateau fix</div><div class="strat-body">Stuck 3+ sessions? Switch rep scheme (<strong>4×8 instead of 3×12</strong>), drop 10%, rebuild over 2 weeks. Or add a pause rep at the top to increase time under tension.</div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-label">Expected timeline</div>
+    <table class="tbl"><thead><tr><th>Timeframe</th><th>What to expect</th></tr></thead>
+    <tbody>
+      <tr><td>Weeks 1–3</td><td>Neurological adaptation — you'll feel stronger before you look different. Log everything.</td></tr>
+      <tr><td>Weeks 4–8</td><td>First visible changes. Compounds moving up. Glutes start responding to the twice-weekly frequency.</td></tr>
+      <tr><td>Weeks 9–16</td><td>Noticeable body composition shift with consistent nutrition. Running pace improves naturally.</td></tr>
+      <tr><td>Week 17+</td><td>Reassess — add volume to lagging areas, swap stalled exercises, consider a new 6-week phase.</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<script>
+function show(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+var DAY_LABELS=['MON · DAY 1','TUE · DAY 2','WED · RUN','THU · DAY 3','FRI · REST','SAT · DAY 4','SUN · RUN'];
+var currentDay=0;
+function initDots(){var w=document.getElementById('day-dots');if(!w)return;w.innerHTML='';DAY_LABELS.forEach(function(_,i){var d=document.createElement('div');d.className='day-dot'+(i===0?' active':'');d.onclick=function(){goToDay(i);};w.appendChild(d);});}
+function goToDay(idx){currentDay=(idx+7)%7;for(var i=0;i<7;i++){var el=document.getElementById('mob-'+i);if(el)el.classList.toggle('hidden',i!==currentDay);}var ind=document.getElementById('day-indicator');if(ind)ind.textContent=DAY_LABELS[currentDay];document.querySelectorAll('.day-dot').forEach(function(d,i){d.classList.toggle('active',i===currentDay);});}
+function changeDay(dir){goToDay(currentDay+dir);}
+var tX=0;
+document.addEventListener('touchstart',function(e){tX=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){var diff=tX-e.changedTouches[0].clientX;var pp=document.getElementById('page-plan');if(pp&&pp.classList.contains('active')&&Math.abs(diff)>50)changeDay(diff>0?1:-1);},{passive:true});
+initDots();
+var KEY='training_final_v2';
+function save(){var d={};document.querySelectorAll('.wi').forEach(function(el){if(el.dataset.id&&el.value)d[el.dataset.id]=el.value;});try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}}
+function load(){try{var raw=localStorage.getItem(KEY);if(!raw)return;var d=JSON.parse(raw);Object.keys(d).forEach(function(id){document.querySelectorAll('[data-id="'+id+'"]').forEach(function(el){el.value=d[id];});});}catch(e){}}
+function sync(el){document.querySelectorAll('[data-id="'+el.dataset.id+'"]').forEach(function(o){if(o!==el)o.value=el.value;});}
+document.querySelectorAll('.wi').forEach(function(el){el.addEventListener('input',function(){sync(el);save();});el.addEventListener('change',function(){sync(el);save();});});
+load();
+</script>
+</body>
+</html>
